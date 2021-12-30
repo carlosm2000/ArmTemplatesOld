@@ -1,0 +1,354 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "variables": {
+    "resourcesApiVersion": "2018-05-01"
+  },
+  "parameters": {
+    "templateLinkBase": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[uri(replace(json(string(deployment().properties.templateLink)).uri,' ','%20'), '.')]"
+    },
+    "templateLinkAccessToken": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+
+    "deploymentId": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "sitecoreAdminPassword": {
+      "type": "securestring",
+      "minLength": 8
+    },
+    "sitecoreSKU": {
+      "type": "string",
+      "allowedValues": [ "Extra Small", "Small", "Medium", "Large", "Extra Large", "2x Large", "3x Large" ],
+      "defaultValue": "Small",
+      "metadata": {
+        "description": "Sitecore SKU controls the sizes and service levels of the provisioned resources"
+      }
+    },
+    "sqlServerName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-sql')]"
+    },
+    "sqlServerLogin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sqlServerPassword": {
+      "type": "securestring",
+      "minLength": 8
+    },
+
+    "sqlServerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "12.0"
+    },
+    "sqlDatabaseCollation": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "SQL_Latin1_General_CP1_CI_AS"
+    },
+
+    "coreSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-core-db')]"
+    },
+    "masterSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-master-db')]"
+    },
+    "webSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-web-db')]"
+    },
+    "reportingSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-reporting-db')]"
+    },
+    "poolsSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-pools-db')]"
+    },
+    "tasksSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-tasks-db')]"
+    },
+    "formsSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-forms-db')]"
+    },
+    "exmMasterSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-exmmaster-db')]"
+    },
+    "shardMapManagerSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-smm-db')]"
+    },
+    "shard0SqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-shard0-db')]"
+    },
+    "shard1SqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-shard1-db')]"
+    },
+    "refDataSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-refdata-db')]"
+    },
+    "maSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-ma-db')]"
+    },
+    "processingEngineTasksSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-processingenginetasks-db')]"
+    },
+    "processingEngineStorageSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-processingenginestorage-db')]"
+    },
+
+    "redisCacheName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-redis')]"
+    },
+    "aSearchName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-azureSearch')]"
+    },
+
+    "hubVNetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-Hub-VNet')]"
+    },
+    "spokeVNetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-Spoke-VNet')]"
+    },
+
+
+    "passwordSalt": {
+      "type": "securestring",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().id]"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('resourcesApiVersion')]",
+      "name": "[concat(parameters('deploymentId'), '-Hub-VNet')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          //"uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/HubVNet.json'), parameters('templateLinkAccessToken'))]"
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'https://cmteststorageacct.file.core.windows.net/arm-templates/ARM/xp-resources/Networking/HubVNet.json?sv=2020-10-02&st=2021-12-15T19%3A02%3A26Z&se=2021-12-16T19%3A02%3A26Z&sr=f&sp=r&sig=RhsZBKrhHNKg%2B1gkzRgJQTTpuJtpN3gcZ6SeSFOplz8%3D'), parameters('templateLinkAccessToken'))]"
+        },
+        "parameters": {
+          "deploymentId": {
+            "value": "[parameters('deploymentId')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "hubVNetName": {
+            "value": "[parameters('hubVNetName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('resourcesApiVersion')]",
+      "name": "[concat(parameters('deploymentId'), '-Spoke-VNet')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          //"uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/SpokeVNet.json'), parameters('templateLinkAccessToken'))]"
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'https://cmteststorageacct.file.core.windows.net/arm-templates/ARM/xp-resources/Networking/SpokeVNet.json?sv=2020-10-02&st=2021-12-15T19%3A01%3A33Z&se=2021-12-16T19%3A01%3A33Z&sr=f&sp=r&sig=vOg%2FMJkemQujXq5xy%2FfqRiR73cO87vkBYfw65DmhDCI%3D'), parameters('templateLinkAccessToken'))]"
+        },
+        "parameters": {
+          "deploymentId": {
+            "value": "[parameters('deploymentId')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "spokeVNetName": {
+            "value": "[parameters('spokeVNetName')]"
+          }
+        }
+      }
+    }
+    /*,
+    {
+      "apiVersion": "[variables('resourcesApiVersion')]",
+      "name": "[concat(parameters('deploymentId'), '-SQL')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'Infrastructure/Spoke/SQL/SitecoreSQL.json'), parameters('templateLinkAccessToken'))]"
+        },
+        "parameters": {
+          "deploymentId": {
+            "value": "[parameters('deploymentId')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sitecoreSKU": {
+            "value": "[parameters('sitecoreSKU')]"
+          },
+
+          "sqlServerName": {
+            "value": "[parameters('sqlServerName')]"
+          },
+          "sqlServerLogin": {
+            "value": "[parameters('sqlServerLogin')]"
+          },
+          "sqlServerPassword": {
+            "value": "[parameters('sqlServerPassword')]"
+          },
+
+          "sqlServerVersion": {
+            "value": "[parameters('sqlServerVersion')]"
+          },
+          "sqlDatabaseCollation": {
+            "value": "[parameters('sqlDatabaseCollation')]"
+          },
+
+          "coreSqlDatabaseName": {
+            "value": "[parameters('coreSqlDatabaseName')]"
+          },
+          "masterSqlDatabaseName": {
+            "value": "[parameters('masterSqlDatabaseName')]"
+          },
+          "webSqlDatabaseName": {
+            "value": "[parameters('webSqlDatabaseName')]"
+          },
+          "poolsSqlDatabaseName": {
+            "value": "[parameters('poolsSqlDatabaseName')]"
+          },
+          "tasksSqlDatabaseName": {
+            "value": "[parameters('tasksSqlDatabaseName')]"
+          },
+          "formsSqlDatabaseName": {
+            "value": "[parameters('formsSqlDatabaseName')]"
+          },
+          "exmMasterSqlDatabaseName": {
+            "value": "[parameters('exmMasterSqlDatabaseName')]"
+          },
+          "shardMapManagerSqlDatabaseName": {
+            "value": "[parameters('shardMapManagerSqlDatabaseName')]"
+          },
+          "shard0SqlDatabaseName": {
+            "value": "[parameters('shard0SqlDatabaseName')]"
+          },
+          "shard1SqlDatabaseName": {
+            "value": "[parameters('shard1SqlDatabaseName')]"
+          },
+          "refDataSqlDatabaseName": {
+            "value": "[parameters('refDataSqlDatabaseName')]"
+          },
+          "maSqlDatabaseName": {
+            "value": "[parameters('maSqlDatabaseName')]"
+          },
+          "processingEngineTasksSqlDatabaseName": {
+            "value": "[parameters('processingEngineTasksSqlDatabaseName')]"
+          },
+          "processingEngineStorageSqlDatabaseName": {
+            "value": "[parameters('processingEngineStorageSqlDatabaseName')]"
+          },
+          "reportingSqlDatabaseName": {
+            "value": "[parameters('reportingSqlDatabaseName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('resourcesApiVersion')]",
+      "name": "[concat(parameters('deploymentId'), '-Redis')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'Infrastructure/Spoke/Redis/redisCache.json'), parameters('templateLinkAccessToken'))]"
+        },
+        "parameters": {
+          "deploymentId": {
+            "value": "[parameters('deploymentId')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sitecoreSKU": {
+            "value": "[parameters('sitecoreSKU')]"
+          },
+          "redisCacheName": {
+            "value": "[parameters('redisCacheName')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "[variables('resourcesApiVersion')]",
+      "name": "[concat(parameters('deploymentId'), '-AzureSearch')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'Infrastructure/Spoke/AzureSearch/Search.json'), parameters('templateLinkAccessToken'))]"
+        },
+        "parameters": {
+          "deploymentId": {
+            "value": "[parameters('deploymentId')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sitecoreSKU": {
+            "value": "[parameters('sitecoreSKU')]"
+          },
+          "aSearchName": {
+            "value": "[parameters('aSearchName')]"
+          }
+        }
+      }
+    }
+    */
+  ]
+}

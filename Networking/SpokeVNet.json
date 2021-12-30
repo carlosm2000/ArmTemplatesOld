@@ -1,0 +1,260 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "variables": {
+    "vnetApiVersion": "2020-11-01",
+    "nsgApiVersion": "2020-07-01",
+    "spokeVNetNameTidy": "[toLower(trim(parameters('spokeVNetName')))]",
+    "spokeNSG_id": "[resourceId('Microsoft.Network/networkSecurityGroups',parameters('spokeNSG_name'))]"
+  },
+  "parameters": {
+    "deploymentId": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "spokeVNetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-Spoke-VNet')]"
+    },
+    "spokeAppGSubnetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-AppGateway-Subnet')]"
+    },
+    "spokePrivateSubnetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-Private-Subnet')]"
+    },
+    "spokeClusterSubnetName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-Cluster-Subnet')]"
+    },
+    "spokeNSG_name":  {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-NSG')]"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('nsgApiVersion')]",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('spokeNSG_name')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHttpsInBound",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "Internet",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowGatewayManagerInBound",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowLoadBalancerInBound",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowBastionHostCommunicationInBound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationPortRanges": [
+                "8080",
+                "5701"
+              ],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "DenyAllInBound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRange": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowSshRdpOutBound",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRanges": [
+                "22",
+                "3389"
+              ],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowAzureCloudCommunicationOutBound",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "AzureCloud",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowBastionHostCommunicationOutBound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationPortRanges": [
+                "8080",
+                "5701"
+              ],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "AllowGetSessionInformationOutBound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Internet",
+              "destinationPortRanges": [
+                "80",
+                "443"
+              ],
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "DenyAllOutBound",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 1000,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "[variables('vnetApiVersion')]",
+      "name": "[variables('spokeVNetNameTidy')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('spokeNSG_id')]"
+      ],
+      "properties": {
+          "addressSpace": {
+              "addressPrefixes": [
+                  "10.0.0.0/20"
+              ]
+          },
+          "dhcpOptions": {
+              "dnsServers": []
+          },
+          "subnets": [
+              {
+                  "name": "[parameters('spokeAppGSubnetName')]",
+                  "properties": {
+                      "addressPrefix": "10.0.12.0/29",
+                      "delegations": [],
+                      "privateEndpointNetworkPolicies": "Enabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled",
+                      "networkSecurityGroup": {
+                          "id": "[variables('spokeNSG_id')]"
+                      }
+                  }
+              },
+              {
+                  "name": "[parameters('spokePrivateSubnetName')]",
+                  "properties": {
+                      "addressPrefix": "10.0.8.0/22",
+                      "delegations": [],
+                      "privateEndpointNetworkPolicies": "Enabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled",
+                      "networkSecurityGroup": {
+                          "id": "[variables('spokeNSG_id')]"
+                      }
+                  }
+              },
+              {
+                  "name": "[parameters('spokeClusterSubnetName')]",
+                  "properties": {
+                      "addressPrefix": "10.0.0.0/21",
+                      "delegations": [],
+                      "privateEndpointNetworkPolicies": "Enabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled",
+                      "networkSecurityGroup": {
+                          "id": "[variables('spokeNSG_id')]"
+                      }
+                  }
+              }
+
+          ],
+          "virtualNetworkPeerings": [],
+          "enableDdosProtection": false
+      }
+    }
+  ]
+}

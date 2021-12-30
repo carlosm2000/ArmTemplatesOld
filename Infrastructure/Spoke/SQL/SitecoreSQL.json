@@ -1,0 +1,1208 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "variables": {
+    "dbApiVersion": "2014-04-01-preview",
+
+    "sqlServerNameTidy": "[toLower(trim(parameters('sqlServerName')))]",
+
+    "coreSqlDatabaseNameTidy": "[toLower(trim(parameters('coreSqlDatabaseName')))]",
+    "webSqlDatabaseNameTidy": "[toLower(trim(parameters('webSqlDatabaseName')))]",
+    "masterSqlDatabaseNameTidy": "[toLower(trim(parameters('masterSqlDatabaseName')))]",
+    "poolsSqlDatabaseNameTidy": "[toLower(trim(parameters('poolsSqlDatabaseName')))]",
+    "tasksSqlDatabaseNameTidy": "[toLower(trim(parameters('tasksSqlDatabaseName')))]",
+    "formsSqlDatabaseNameTidy": "[toLower(trim(parameters('formsSqlDatabaseName')))]",
+    "exmMasterSqlDatabaseNameTidy": "[toLower(trim(parameters('exmMasterSqlDatabaseName')))]",
+
+    "shardMapManagerSqlDatabaseNameTidy": "[toLower(trim(parameters('shardMapManagerSqlDatabaseName')))]",
+    "shard0SqlDatabaseNameTidy": "[toLower(trim(parameters('shard0SqlDatabaseName')))]",
+    "shard1SqlDatabaseNameTidy": "[toLower(trim(parameters('shard1SqlDatabaseName')))]",
+    "refDataSqlDatabaseNameTidy": "[toLower(trim(parameters('refDataSqlDatabaseName')))]",
+    "refDataSqlDatabaseCollation": "Latin1_General_CS_AS",
+
+    "maSqlDatabaseNameTidy": "[toLower(trim(parameters('maSqlDatabaseName')))]",
+
+    "processingEngineTasksSqlDatabaseNameTidy": "[toLower(trim(parameters('processingEngineTasksSqlDatabaseName')))]",
+    "processingEngineStorageSqlDatabaseNameTidy": "[toLower(trim(parameters('processingEngineStorageSqlDatabaseName')))]",
+    "reportingSqlDatabaseNameTidy": "[toLower(trim(parameters('reportingSqlDatabaseName')))]",
+
+    "sitecoreTags": {
+      "provider": "b51535c2-ab3e-4a68-95f8-e2e3c9a19299",
+      "core": "core",
+      "master": "master",
+      "web": "web",
+      "pools": "prc-pools",
+      "tasks": "prc-tasks",
+      "forms": "forms",
+      "exmmaster" : "exmmaster",
+      "xcRefData": "xc-refdata",
+      "xcShard0": "xc-shard-0",
+      "xcShard1": "xc-shard-1",
+      "xcShardMapManager": "xc-smm",
+      "ma": "ma",
+      "cortexProcessingEngineTasks": "processingenginetasks",
+      "cortexProcessingEngineStorage": "processingenginestorage",
+      "reporting": "reporting"
+    }
+  },
+  "parameters": {
+    "deploymentId": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "sitecoreSKU": {
+      "type": "string",
+      "allowedValues": [ "Extra Small", "Small", "Medium", "Large", "Extra Large", "2x Large", "3x Large" ],
+      "defaultValue": "Small",
+      "metadata": {
+        "description": "Sitecore SKU controls the sizes and service levels of the provisioned resources"
+      }
+    },
+
+    "sqlServerName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-sql')]"
+    },
+    "sqlServerLogin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sqlServerPassword": {
+      "type": "securestring",
+      "minLength": 8
+    },
+
+    "sqlServerVersion": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "12.0"
+    },
+
+    "sqlDatabaseCollation": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "SQL_Latin1_General_CP1_CI_AS"
+    },
+
+    "coreSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-core-db')]"
+    },
+    "masterSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-master-db')]"
+    },
+    "webSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-web-db')]"
+    },
+    "poolsSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-pools-db')]"
+    },
+    "tasksSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-tasks-db')]"
+    },
+    "formsSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-forms-db')]"
+    },
+    "exmMasterSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-exmmaster-db')]"
+    },
+
+    "shardMapManagerSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-smm-db')]"
+    },
+    "shard0SqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-shard0-db')]"
+    },
+    "shard1SqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-shard1-db')]"
+    },
+    "refDataSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-refdata-db')]"
+    },
+
+    "maSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-ma-db')]"
+    },
+
+    "processingEngineTasksSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-processingenginetasks-db')]"
+    },
+    "processingEngineStorageSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-processingenginestorage-db')]"
+    },
+    "reportingSqlDatabaseName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[concat(parameters('deploymentId'), '-reporting-db')]"
+    },
+
+    "skuMap": {
+      "type": "secureObject",
+      "defaultValue": {
+        "Extra Small": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          }
+        },
+        "Small": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          }
+        },
+        "Medium": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          }
+        },
+        "Large": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          }
+        },
+        "Extra Large": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P1"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P1"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          }
+        },
+        "2x Large": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P2"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P2"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          }
+        },
+        "3x Large": {
+          "coreSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "masterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "webSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S4"
+          },
+          "poolsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "tasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "formsSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "exmMasterSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S2"
+          },
+          "refDataSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "shardMapManagerSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "xcShard0SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P2"
+          },
+          "xcShard1SqlDatabase": {
+            "Edition": "Premium",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "P2"
+          },
+          "maSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S1"
+          },
+          "processingEngineTasksSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S0"
+          },
+          "processingEngineStorageSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          },
+          "reportingSqlDatabase": {
+            "Edition": "Standard",
+            "MaxSize": "268435456000",
+            "ServiceObjectiveLevel": "S3"
+          }
+        }
+      }
+    },
+    "resourceSizes": {
+      "type": "object",
+      "defaultValue": "[parameters('skuMap')[parameters('sitecoreSKU')]]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "[variables('dbApiVersion')]",
+      "properties": {
+        "administratorLogin": "[parameters('sqlServerLogin')]",
+        "administratorLoginPassword": "[parameters('sqlServerPassword')]",
+        "version": "[parameters('sqlServerVersion')]"
+      },
+      "name": "[variables('sqlServerNameTidy')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "provider": "[variables('sitecoreTags').provider]"
+      },
+      "resources": [
+        {
+          "type": "firewallrules",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "endIpAddress": "0.0.0.0",
+            "startIpAddress": "0.0.0.0"
+          },
+          "name": "AllowAllAzureIps",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ]
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').coreSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').coreSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').coreSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('coreSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('coreSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').core]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').masterSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').masterSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').masterSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('masterSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('masterSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').master]"
+          }
+        },
+		    {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').webSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').webSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').webSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('webSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('webSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').web]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').poolsSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').poolsSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').poolsSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('poolsSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('poolsSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').pools]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').tasksSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').tasksSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').tasksSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('tasksSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('tasksSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').tasks]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').formsSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').formsSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').formsSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('formsSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('formsSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').forms]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').exmMasterSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').exmMasterSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').exmMasterSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('exmMasterSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],
+          "name": "[variables('exmMasterSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').exmmaster]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').refDataSqlDataBase.Edition]",
+            "collation": "[variables('refDataSqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').refDataSqlDataBase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').refDataSqlDataBase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('refDataSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('refDataSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').xcRefData]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').shardMapManagerSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').shardMapManagerSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').shardMapManagerSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('shardMapManagerSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('shardMapManagerSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').xcShardMapManager]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').xcShard0SqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').xcShard0SqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').xcShard0SqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('shard0SqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('shard0SqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').xcShard0]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').xcShard1SqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').xcShard1SqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').xcShard1SqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('shard1SqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('shard1SqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').xcShard1]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').maSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').maSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').maSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('maSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('maSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').ma]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').processingEngineTasksSqlDataBase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').processingEngineTasksSqlDataBase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').processingEngineTasksSqlDataBase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('processingEngineTasksSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('processingEngineTasksSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').cortexProcessingEngineTasks]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').processingEngineStorageSqlDataBase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').processingEngineStorageSqlDataBase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').processingEngineStorageSqlDataBase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('processingEngineStorageSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('processingEngineStorageSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').cortexProcessingEngineStorage]"
+          }
+        },
+        {
+          "type": "databases",
+          "apiVersion": "[variables('dbApiVersion')]",
+          "properties": {
+            "edition": "[parameters('resourceSizes').reportingSqlDatabase.Edition]",
+            "collation": "[parameters('sqlDatabaseCollation')]",
+            "maxSizeBytes": "[parameters('resourceSizes').reportingSqlDatabase.MaxSize]",
+            "requestedServiceObjectiveName": "[parameters('resourceSizes').reportingSqlDatabase.ServiceObjectiveLevel]"
+          },
+          "resources": [
+            {
+              "name": "current",
+              "type": "transparentDataEncryption",
+              "dependsOn": [
+                "[variables('reportingSqlDatabaseNameTidy')]"
+              ],
+              "apiVersion": "2014-04-01",
+              "properties": {
+                "status": "Enabled"
+              }
+            }
+          ],  
+          "name": "[variables('reportingSqlDatabaseNameTidy')]",
+          "location": "[parameters('location')]",
+          "dependsOn": [ "[resourceId('Microsoft.Sql/servers', variables('sqlServerNameTidy'))]" ],
+          "tags": {
+            "provider": "[variables('sitecoreTags').provider]",
+            "logicalName": "[variables('sitecoreTags').reporting]"
+          }
+        }
+      ]
+    }
+
+  ],
+  "outputs": {
+    "infrastructure": {
+      "type": "object",
+      "value": {
+        "sqlServerFqdn": "[reference(concat('Microsoft.Sql/servers/', variables('sqlServerNameTidy'))).fullyQualifiedDomainName]"
+      }
+    }
+  }
+}
