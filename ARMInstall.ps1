@@ -1,5 +1,5 @@
 # Specify the parameters for the deployment 
-$ArmTemplateUrl = "https://cmteststorageacct.file.core.windows.net/arm-templates/ARM/xp-resources/azuredeploy.json?sv=2020-10-02&st=2021-12-15T03%3A34%3A49Z&se=2021-12-16T03%3A34%3A49Z&sr=f&sp=r&sig=7NtZZpQAZIU7dN3Vgm09tQTI2DMQ4HVaI7PjbDSkJOI%3D"
+$ArmTemplateUrl = "https://raw.githubusercontent.com/carlosm2000/ArmTemplatesOld/master/azuredeploy.json"
 $ArmParametersPath = ".\azuredeploy.parameters.json"
 $licenseFilePath = ".\license.xml"
 
@@ -8,7 +8,7 @@ $certificateFilePath = $null
 $certificatePassword = $null
 $certificateBlob = $null
 
-$Name = "cm-test-arm"
+$Name = "alsglobal-tests-old"
 $location = "westus"
 $AzureSubscriptionId = "80e2f4cb-198c-49b1-ad82-da207799c3f9"
 

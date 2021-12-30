@@ -174,8 +174,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          //"uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/HubVNet.json'), parameters('templateLinkAccessToken'))]"
-          "uri": "[concat(uri(parameters('templateLinkBase'), 'https://cmteststorageacct.file.core.windows.net/arm-templates/ARM/xp-resources/Networking/HubVNet.json?sv=2020-10-02&st=2021-12-15T19%3A02%3A26Z&se=2021-12-16T19%3A02%3A26Z&sr=f&sp=r&sig=RhsZBKrhHNKg%2B1gkzRgJQTTpuJtpN3gcZ6SeSFOplz8%3D'), parameters('templateLinkAccessToken'))]"
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/HubVNet.json'), parameters('templateLinkAccessToken'))]"
         },
         "parameters": {
           "deploymentId": {
@@ -197,8 +196,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          //"uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/SpokeVNet.json'), parameters('templateLinkAccessToken'))]"
-          "uri": "[concat(uri(parameters('templateLinkBase'), 'https://cmteststorageacct.file.core.windows.net/arm-templates/ARM/xp-resources/Networking/SpokeVNet.json?sv=2020-10-02&st=2021-12-15T19%3A01%3A33Z&se=2021-12-16T19%3A01%3A33Z&sr=f&sp=r&sig=vOg%2FMJkemQujXq5xy%2FfqRiR73cO87vkBYfw65DmhDCI%3D'), parameters('templateLinkAccessToken'))]"
+          "uri": "[concat(uri(parameters('templateLinkBase'), 'Networking/SpokeVNet.json'), parameters('templateLinkAccessToken'))]"
         },
         "parameters": {
           "deploymentId": {
